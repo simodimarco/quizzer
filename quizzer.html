@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>quizzer</title>
+    <link rel="icon"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%23800000'/%3E%3Cpath d='M30,50 l15,15 l30,-30' stroke='white' stroke-width='10' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+
+    <style>
+        /* =========================================
+           CONFIGURAZIONE TOTALE (CSS VARIABLES)
+           ========================================= */
+        :root {
+            /* Palette Tema */
+            --color-primary: #822433;
+            --color-primary-dark: #5a1923;
+            --color-primary-pale: #f9f0f1;
+
+            /* Sfondi e Superfici */
+            --bg-body: #f0f2f5;
+            --bg-card: #ffffff;
+            --bg-input: #f8f9fa;
+            --bg-modal: rgba(0, 0, 0, 0.75);
+
+            /* Testo */
+            --text-main: #2d2e2e;
+            --text-muted: #6c757d;
+            --text-on-red: #ffffff;
+
+            /* Feedback */
+            --color-success: #2e7d32;
+            --color-error: #c62828;
+            --color-info: #007bff;
+
+            /* Misure e Bordi */
+            --radius-lg: 16px;
+            --radius-md: 8px;
+            --radius-sm: 4px;
+            --container-w: 800px;
+
+            /* Ombre (Stile Card) */
+            --shadow-main: 0 10px 25px rgba(0, 0, 0, 0.1);
+            --shadow-hover: 0 15px 35px rgba(0, 0, 0, 0.15);
+
+            /* Tipografia */
+            --font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        /* =========================================
+           RESET & BASE STYLES
+           ========================================= */
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: var(--container-w);
+            width: 100%;
+            background: var(--bg-card);
+            padding: 40px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-main);
+            border-top: 10px solid var(--color-primary);
+        }
+
+        h1 {
+            color: var(--color-primary);
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            font-size: 1.8rem;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 40px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* =========================================
+           BUTTONS & INPUTS
+           ========================================= */
+        .btn {
+            padding: 14px 24px;
+            border-radius: var(--radius-md);
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--color-primary);
+            color: var(--text-on-red);
+        }
+
+        .btn-primary:hover {
+            background: var(--color-primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--color-primary);
+            color: var(--color-primary);
+        }
+
+        .btn-outline:hover {
+            background: var(--color-primary-pale);
+        }
+
+        textarea {
+            width: 100%;
+            background: var(--bg-input);
+            border: 1px solid #ddd;
+            border-radius: var(--radius-md);
+            padding: 15px;
+            font-family: 'Consolas', monospace;
+            box-sizing: border-box;
+            margin-bottom: 15px;
+        }
+
+        select.btn-outline {
+            width: auto;
+            appearance: none;
+            padding-right: 35px;
+        }
+
+        /* =========================================
+           SETUP AREA (CARDS)
+           ========================================= */
+        .setup-card {
+            background: var(--bg-input);
+            padding: 20px;
+            border-radius: var(--radius-md);
+            margin-bottom: 25px;
+        }
+
+        #ai-prompt-text {
+            min-height: 200px;
+        }
+
+        #drop-zone {
+            border: 2px dashed #ccc;
+            padding: 40px;
+            text-align: center;
+            border-radius: var(--radius-md);
+            margin: 20px 0;
+            cursor: pointer;
+            transition: 0.3s;
+            background: white;
+        }
+
+        #drop-zone.hover {
+            border-color: var(--color-primary);
+            background: var(--color-primary-pale);
+        }
+
+        /* =========================================
+           QUIZ AREA (CARDS)
+           ========================================= */
+        .quiz-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .score-box {
+            font-weight: bold;
+            color: var(--color-primary);
+            font-size: 1.1rem;
+        }
+
+        .question-meta {
+            color: var(--color-primary);
+            font-weight: bold;
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+        }
+
+        .question-id {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            margin-bottom: 15px;
+        }
+
+        .question-text {
+            font-size: 1.4rem;
+            line-height: 1.4;
+            margin-bottom: 35px;
+        }
+
+        .options-grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        .option-btn {
+            background: var(--bg-card);
+            border: 1px solid #eee;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            text-align: left;
+            padding: 20px;
+            font-size: 1rem;
+            text-transform: none;
+            color: var(--text-main);
+        }
+
+        .option-btn:hover:not(:disabled) {
+            border-color: var(--color-primary);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .option-btn.correct {
+            background: var(--color-success) !important;
+            color: white;
+            border: none;
+        }
+
+        .option-btn.wrong {
+            background: var(--color-error) !important;
+            color: white;
+            border: none;
+        }
+
+        /* =========================================
+           MODAL EDITOR
+           ========================================= */
+        #editor-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-modal);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            width: 90%;
+            max-width: 800px;
+            padding: 30px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .footer-tag {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1 style="display: flex; align-items: center; justify-content: center; gap: 15px;">
+            <svg width="40" height="40" viewBox="0 0 100 100" style="flex-shrink: 0;">
+                <circle cx="50" cy="50" r="50" fill="#800000" />
+                <path d="M30,50 l15,15 l30,-30" stroke="white" stroke-width="10" fill="none" stroke-linecap="round"
+                    stroke-linejoin="round" />
+            </svg>
+            <span>quizzer</span>
+        </h1>
+        <p class="subtitle"
+            style="display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap;">
+            <span>trasforma una <strong>lista di domande</strong></span>
+
+            <svg width="24" height="24" viewBox="0 0 100 100" style="flex-shrink: 0; margin: 0 5px;">
+                <circle cx="50" cy="50" r="50" fill="#800000" />
+                <path d="M40,30 L75,50 L40,70 Z" fill="white" />
+            </svg>
+
+            <span>in un <strong>quiz interattivo</strong></span>
+        </p>
+        <div id="setup-area">
+            <div class="setup-card">
+                <p><strong>Istruzioni per l'uso:</strong></p>
+                <!-- lista numerata -->
+                <ol>
+                    <li>Procurati o prepara un documento con le domande su cui vuoi testarti.</li>
+                    <li>Chiedi ad un'AI di formattarlo come richiesto da questa app usando il prompt di seguito (copia
+                        il prompt e incollalo nella chat AI aggiungendo al prompt la lista delle domande in formato
+                        testo o allegando il file di origine).</li>
+                    <li>Scarica il file .yaml o copoia il testo generato dall'AI e caricalo o incollalo in questa
+                        pagina.</li>
+                    <li>Scegli se vuoi vederle in ordine casuale o sequenziale.</li>
+                    <li>Inizia il tuo ripasso!</li>
+                    <li>Durante il quiz, puoi modificare le domande in tempo reale usando l'editor live (il quiz si
+                        aggiornerà automaticamente con le modifiche).</li>
+                </ol>
+                <label> <b>AI prompt:</b></label>
+                <textarea id="ai-prompt-text"
+                    rows="2">Formatta il seguente testo in YAML: - id: numero, domanda: "testo", opzioni: {a: "testo", b: "testo"}, risposta_corretta: "lettera". Se non sono evidenziate le risposte corrette, prima di procedere, chiedimi se puoi aggiungerle tu oppure se preferisco lasciare vuoto il campo. Se riscontri errori o ambiguità nel documento di origine, prima di procedere, evidenziale e chiedimi come correggerle.</textarea>
+                <button class="btn btn-outline" style="width:100%" onclick="copyToClipboard('ai-prompt-text')">Copia
+                    Prompt per AI</button>
+            </div>
+
+            <div id="drop-zone">
+                <b>TRASCINA IL FILE .YAML QUI</b><br>oppure clicca per selezionare il file da caricare
+            </div>
+
+            <div class="setup-card">
+                <label><b>OPPURE incolla il testo formattato YAML:</b></label>
+                <textarea id="paste-area" rows="6" placeholder="- id: 1 ..."></textarea>
+                <div style="display:flex; gap:10px;">
+                    <select id="order-mode" class="btn btn-outline" style="flex:1">
+                        <option value="sequential">Ordine sequenziale (per ID)</option>
+                        <option value="random">Ordine Casuale</option>
+                    </select>
+                    <button class="btn btn-primary" style="flex:2" onclick="startWithPaste()">Avvia Sessione</button>
+                </div>
+            </div>
+            <input type="file" id="file-input" class="hidden" accept=".yaml,.yml">
+        </div>
+
+        <div id="quiz-area" class="hidden">
+            <div class="quiz-toolbar">
+                <button class="btn btn-outline" onclick="openEditor()">📝 Modifica File</button>
+                <div id="score-display" class="score-box">Punteggio: 0</div>
+            </div>
+
+            <div id="progress" class="question-meta"></div>
+            <div id="q-id" class="question-id"></div>
+            <div id="question-text" class="question-text"></div>
+
+            <div id="options-container" class="options-grid"></div>
+            <button id="next-btn" class="btn btn-primary hidden" style="width:100%; margin-top:30px;">Continua
+                →</button>
+        </div>
+
+        <div id="editor-modal" class="hidden">
+            <div class="modal-content">
+                <h3 style="color:var(--color-primary); margin-top:0;">Editor Live YAML</h3>
+                <textarea id="live-editor-text" rows="18"></textarea>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="copyToClipboard('live-editor-text')">📋 Copia
+                        Testo</button>
+                    <button class="btn btn-outline" onclick="downloadYaml()">💾 Scarica .yaml</button>
+                    <button class="btn btn-outline" onclick="closeEditor()">Annulla</button>
+                    <button class="btn btn-primary" onclick="applyEditorChanges()">Applica</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-tag">
+            <p>realizzato con l'aiuto di Gemini AI<br>rilasciato con licenza open source GPLv3<br><a
+                    href="https://github.com/simodimarco/quizzer" target="_blank">maggiori informazioni - GitHub</a></p>
+        </div>
+    </div>
+
+    <script>
+        let questions = [];
+        let currentIndex = 0;
+        let score = 0;
+
+        // --- FILE HANDLING ---
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+
+        dropZone.onclick = () => fileInput.click();
+
+        // Prevent default browser behavior for drag/drop
+        window.addEventListener("dragover", e => e.preventDefault(), false);
+        window.addEventListener("drop", e => e.preventDefault(), false);
+
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('hover'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('hover'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('hover');
+            if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+        });
+
+        fileInput.onchange = (e) => handleFile(e.target.files[0]);
+
+        function handleFile(file) {
+            const reader = new FileReader();
+            reader.onload = (ev) => loadData(ev.target.result);
+            reader.readAsText(file);
+        }
+
+        // --- QUIZ LOGIC ---
+        function copyToClipboard(elementId) {
+            const el = document.getElementById(elementId);
+            el.select();
+            document.execCommand('copy');
+            alert("Copiato negli appunti!");
+        }
+
+        function startWithPaste() {
+            const raw = document.getElementById('paste-area').value;
+            if (!raw.trim()) return alert("Inserisci dei dati YAML!");
+            loadData(raw);
+        }
+
+        function loadData(yamlString) {
+            try {
+                questions = jsyaml.load(yamlString);
+                const mode = document.getElementById('order-mode').value;
+                if (mode === 'random') questions.sort(() => Math.random() - 0.5);
+                else questions.sort((a, b) => a.id - b.id);
+
+                document.getElementById('setup-area').classList.add('hidden');
+                document.getElementById('quiz-area').classList.remove('hidden');
+                showQuestion();
+            } catch (e) { alert("Errore nel formato YAML!"); }
+        }
+
+        function showQuestion() {
+            const q = questions[currentIndex];
+            document.getElementById('next-btn').classList.add('hidden');
+            document.getElementById('progress').innerText = `QUESITO ${currentIndex + 1} DI ${questions.length}`;
+            document.getElementById('q-id').innerText = `ID RIFERIMENTO: ${q.id}`;
+            document.getElementById('question-text').innerText = q.domanda;
+
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+
+            Object.entries(q.opzioni).forEach(([key, val]) => {
+                const btn = document.createElement('button');
+                btn.className = 'btn option-btn';
+                btn.innerHTML = `<strong>${key.toUpperCase()}</strong>. ${val}`;
+                btn.onclick = () => checkAnswer(key, btn);
+                container.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(key, btn) {
+            const q = questions[currentIndex];
+            const allBtns = document.querySelectorAll('.option-btn');
+            allBtns.forEach(b => b.disabled = true);
+
+            if (key === q.risposta_corretta) {
+                btn.classList.add('correct');
+                score++;
+                document.getElementById('score-display').innerText = `Punteggio: ${score}`;
+            } else {
+                btn.classList.add('wrong');
+                allBtns.forEach(b => {
+                    if (b.innerText.trim().startsWith(q.risposta_corretta.toUpperCase())) b.classList.add('correct');
+                });
+            }
+            document.getElementById('next-btn').classList.remove('hidden');
+        }
+
+        document.getElementById('next-btn').onclick = () => {
+            currentIndex++;
+            if (currentIndex < questions.length) showQuestion();
+            else alert(`Fine! Risultato: ${score}/${questions.length}`);
+        };
+
+        // --- EDITOR & STORAGE ---
+        function openEditor() {
+            document.getElementById('live-editor-text').value = jsyaml.dump(questions);
+            document.getElementById('editor-modal').classList.remove('hidden');
+        }
+
+        function closeEditor() { document.getElementById('editor-modal').classList.add('hidden'); }
+
+        function applyEditorChanges() {
+            try {
+                questions = jsyaml.load(document.getElementById('live-editor-text').value);
+                closeEditor();
+                showQuestion();
+            } catch (e) { alert("Errore nello YAML!"); }
+        }
+
+        function downloadYaml() {
+            const data = document.getElementById('live-editor-text').value;
+            const blob = new Blob([data], { type: 'text/yaml' });
+            const a = document.createElement('a');
+            a.href = window.URL.createObjectURL(blob);
+            a.download = 'quiz-edit.yaml';
+            a.click();
+        }
+    </script>
+</body>
+
+</html>
