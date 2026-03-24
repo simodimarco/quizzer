@@ -319,7 +319,7 @@
                     <li>Chiedi ad un'AI di formattarlo come richiesto da questa app usando il prompt di seguito (copia
                         il prompt e incollalo nella chat AI aggiungendo al prompt la lista delle domande in formato
                         testo o allegando il file di origine).</li>
-                    <li>Scarica il file .yaml o copoia il testo generato dall'AI e caricalo o incollalo in questa
+                    <li>Scarica il file .yaml o copia il testo generato dall'AI e caricalo o incollalo in questa
                         pagina.</li>
                     <li>Scegli se vuoi vederle in ordine casuale o sequenziale.</li>
                     <li>Inizia il tuo ripasso!</li>
@@ -328,7 +328,18 @@
                 </ol>
                 <label> <b>AI prompt:</b></label>
                 <textarea id="ai-prompt-text"
-                    rows="2">Formatta il seguente testo in YAML: - id: numero, domanda: "testo", opzioni: {a: "testo", b: "testo"}, risposta_corretta: "lettera". Se non sono evidenziate le risposte corrette, prima di procedere, chiedimi se puoi aggiungerle tu oppure se preferisco lasciare vuoto il campo. Se riscontri errori o ambiguità nel documento di origine, prima di procedere, evidenziale e chiedimi come correggerle.</textarea>
+                    rows="2">Formatta il seguente testo in YAML:
+---
+- id: numero
+  domanda: testo con spazi ma senza a capo
+  opzioni: 
+    a: testo con spazi ma senza a capo
+    b: testo con spazi ma senza a capo
+    ...
+  risposta_corretta: lettera oppure null
+---
+Se non sono evidenziate le risposte corrette, prima di procedere, chiedimi se puoi aggiungerle tu oppure se preferisco lasciare vuoto il campo.
+Se riscontri errori o ambiguità nel documento di origine, prima di procedere, evidenziale e chiedimi come correggerle.</textarea>
                 <button class="btn btn-outline" style="width:100%" onclick="copyToClipboard('ai-prompt-text')">Copia
                     Prompt per AI</button>
             </div>
@@ -340,12 +351,14 @@
             <div class="setup-card">
                 <label><b>OPPURE incolla il testo formattato YAML:</b></label>
                 <textarea id="paste-area" rows="6" placeholder="- id: 1 ..."></textarea>
-                <div style="display:flex; gap:10px;">
-                    <select id="order-mode" class="btn btn-outline" style="flex:1">
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <select id="order-mode" class="btn btn-outline" style="flex: 1; min-width: 200px;">
                         <option value="sequential">Ordine sequenziale (per ID)</option>
                         <option value="random">Ordine Casuale</option>
                     </select>
-                    <button class="btn btn-primary" style="flex:2" onclick="startWithPaste()">Avvia Sessione</button>
+                    <button class="btn btn-primary" style="flex: 1; min-width: 200px;" onclick="startWithPaste()">
+                        Avvia Sessione
+                    </button>
                 </div>
             </div>
             <input type="file" id="file-input" class="hidden" accept=".yaml,.yml">
@@ -362,8 +375,11 @@
             <div id="question-text" class="question-text"></div>
 
             <div id="options-container" class="options-grid"></div>
-            <button id="next-btn" class="btn btn-primary hidden" style="width:100%; margin-top:30px;">Continua
-                →</button>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 30px;">
+                <button id="prev-btn" class="btn btn-outline" onclick="prevQuestion()">← Indietro</button>
+                <button id="next-btn" class="btn btn-primary" onclick="nextQuestion()">Continua →</button>
+            </div>
         </div>
 
         <div id="editor-modal" class="hidden">
@@ -381,7 +397,7 @@
         </div>
 
         <div class="footer-tag">
-            <p>realizzato con l'aiuto di Gemini AI<br>rilasciato con licenza open source GPLv3<br><a
+            <p>realizzato con l'aiuto di Gemini AI<br>rilasciato con licenza open source AGPLv3<br><a
                     href="https://github.com/simodimarco/quizzer" target="_blank">maggiori informazioni - GitHub</a></p>
         </div>
     </div>
@@ -397,7 +413,6 @@
 
         dropZone.onclick = () => fileInput.click();
 
-        // Prevent default browser behavior for drag/drop
         window.addEventListener("dragover", e => e.preventDefault(), false);
         window.addEventListener("drop", e => e.preventDefault(), false);
 
@@ -417,7 +432,7 @@
             reader.readAsText(file);
         }
 
-        // --- QUIZ LOGIC ---
+        // --- FUNZIONI UTILITY ---
         function copyToClipboard(elementId) {
             const el = document.getElementById(elementId);
             el.select();
@@ -425,6 +440,7 @@
             alert("Copiato negli appunti!");
         }
 
+        // --- LOGICA QUIZ ---
         function startWithPaste() {
             const raw = document.getElementById('paste-area').value;
             if (!raw.trim()) return alert("Inserisci dei dati YAML!");
@@ -440,13 +456,18 @@
 
                 document.getElementById('setup-area').classList.add('hidden');
                 document.getElementById('quiz-area').classList.remove('hidden');
+                currentIndex = 0; // Resetta l'indice
                 showQuestion();
             } catch (e) { alert("Errore nel formato YAML!"); }
         }
 
         function showQuestion() {
             const q = questions[currentIndex];
-            document.getElementById('next-btn').classList.add('hidden');
+
+            // Gestione avanzamento bottoni
+            document.getElementById('prev-btn').disabled = (currentIndex === 0);
+            document.getElementById('next-btn').innerText = (currentIndex === questions.length - 1) ? "Fine Quiz" : "Continua →";
+
             document.getElementById('progress').innerText = `QUESITO ${currentIndex + 1} DI ${questions.length}`;
             document.getElementById('q-id').innerText = `ID RIFERIMENTO: ${q.id}`;
             document.getElementById('question-text').innerText = q.domanda;
@@ -468,39 +489,79 @@
             const allBtns = document.querySelectorAll('.option-btn');
             allBtns.forEach(b => b.disabled = true);
 
+            // Se la risposta manca nel YAML, avvisiamo l'utente invece di bloccare
+            if (!q.risposta_corretta) {
+                alert("Attenzione: risposta_corretta non definita per questa domanda nel file YAML.");
+                btn.classList.add('wrong');
+                return;
+            }
+
             if (key === q.risposta_corretta) {
                 btn.classList.add('correct');
                 score++;
                 document.getElementById('score-display').innerText = `Punteggio: ${score}`;
             } else {
                 btn.classList.add('wrong');
+                // Mostra quella giusta
                 allBtns.forEach(b => {
-                    if (b.innerText.trim().startsWith(q.risposta_corretta.toUpperCase())) b.classList.add('correct');
+                    const label = b.querySelector('strong').innerText.toLowerCase();
+                    if (label === q.risposta_corretta.toLowerCase()) b.classList.add('correct');
                 });
             }
-            document.getElementById('next-btn').classList.remove('hidden');
         }
 
-        document.getElementById('next-btn').onclick = () => {
-            currentIndex++;
-            if (currentIndex < questions.length) showQuestion();
-            else alert(`Fine! Risultato: ${score}/${questions.length}`);
-        };
+        function nextQuestion() {
+            if (currentIndex < questions.length - 1) {
+                currentIndex++;
+                showQuestion();
+            } else {
+                alert(`Fine del quiz! Punteggio finale: ${score}/${questions.length}`);
+                location.reload(); // Torna alla home
+            }
+        }
 
-        // --- EDITOR & STORAGE ---
+        function prevQuestion() {
+            if (currentIndex > 0) {
+                currentIndex--;
+                showQuestion();
+            }
+        }
+
+        // --- EDITOR ---
         function openEditor() {
-            document.getElementById('live-editor-text').value = jsyaml.dump(questions);
+            const textArea = document.getElementById('live-editor-text');
+            // Usiamo indent: 2 per rendere lo YAML leggibile
+            textArea.value = jsyaml.dump(questions, { indent: 2 });
             document.getElementById('editor-modal').classList.remove('hidden');
+
+            // 🎯 Focus e Scroll sulla domanda corrente
+            const currentId = questions[currentIndex].id;
+            const searchText = `id: ${currentId}`;
+            const pos = textArea.value.indexOf(searchText);
+
+            if (pos !== -1) {
+                setTimeout(() => {
+                    textArea.focus();
+                    textArea.setSelectionRange(pos, pos + searchText.length);
+
+                    // Calcolo approssimativo per lo scroll
+                    const lines = textArea.value.substr(0, pos).split("\n").length;
+                    textArea.scrollTop = (lines - 1) * 20; // 20px è l'altezza media di una riga
+                }, 100);
+            }
         }
 
         function closeEditor() { document.getElementById('editor-modal').classList.add('hidden'); }
 
         function applyEditorChanges() {
             try {
-                questions = jsyaml.load(document.getElementById('live-editor-text').value);
-                closeEditor();
-                showQuestion();
-            } catch (e) { alert("Errore nello YAML!"); }
+                const editedData = jsyaml.load(document.getElementById('live-editor-text').value);
+                if (Array.isArray(editedData)) {
+                    questions = editedData;
+                    closeEditor();
+                    showQuestion();
+                }
+            } catch (e) { alert("Errore nel formato YAML! Controlla la spaziatura."); }
         }
 
         function downloadYaml() {
@@ -508,7 +569,7 @@
             const blob = new Blob([data], { type: 'text/yaml' });
             const a = document.createElement('a');
             a.href = window.URL.createObjectURL(blob);
-            a.download = 'quiz-edit.yaml';
+            a.download = 'quiz-aggiornato.yaml';
             a.click();
         }
     </script>
