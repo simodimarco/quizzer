@@ -1,0 +1,21 @@
+{
+  "name": "Quizzer",
+  "short_name": "Quizzer",
+  "description": "A lightweight quiz app for practicing exams using YAML files.",
+  "start_url": "quizzer.html",
+  "display": "standalone",
+  "background_color": "#f0f2f5",
+  "theme_color": "#822433",
+  "icons": [
+    {
+      "src": "icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
