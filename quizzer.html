@@ -37,14 +37,14 @@
             margin: 0;
             display: flex;
             justify-content: center;
-            padding: 40px 20px;
+            padding: 2%;
         }
 
         .container {
             max-width: var(--container-w);
             width: 100%;
             background: var(--bg-card);
-            padding: 40px;
+            padding: 5%;
             border-radius: var(--radius-lg);
             box-shadow: var(--shadow-main);
             border-top: 10px solid var(--color-primary);
@@ -321,28 +321,31 @@ Formatta il testo in YAML.
 Scegli il formato in base al contenuto tra:
 
 QUIZ (se ci sono opzioni):
+```yaml
 - id: 1
-  domanda: testo del quesito
+  domanda: >
+    testo del quesito
   opzioni:
-    a: testo con spazi ma senza a capo e senza ':' per non "rompere" il formato YAML
-    b: testo ...
+    a: "testo"
+    b: "testo"
   risposta_corretta: "lettera"
-  note: note o spiegazioni aggiuntive (opzionale)
+  note: "note o spiegazioni aggiuntive (opzionale)"
+```
 
 FLASHCARDS (domanda secca):
+```yaml
 - id: 2
-  domanda: 
-  risposta: definizione estesa o risposta alla domanda
+  domanda: "testo domanda"
+  risposta: "definizione estesa o risposta alla domanda"
+```  
 
+Fai attenzione a non utilizzare caratteri speciali che potrebbero interferire con la sintassi YAML (come i due punti o le virgolette) senza il corretto escape.
 
 Se non sono evidenziate le risposte corrette, se non ci sono le risposte alle domande o mancano le note, prima di procedere, chiedimi di scegliere tra queste opzioni:
   a. lascia i campi vuoti
-  b. integra i campi mancanti aggiungendo una nota *generato con AI* nella flashcard o nel campo note del quiz
+  b. integra i campi mancanti aggiungendo la nota (generato con AI) nella flashcard o nel campo note del quiz
 Se riscontri errori, refusi o ambiguità nel documento di origine, prima di procedere, evidenziale e chiedimi come correggerle.
 In questo caso, poiché potrei non sapere esattamete come risponderti, tieni presente che il file genrato dovrà essere usato in questa app web opensource di cui puoi analizzare il codice per aiutarmi a decidere: https://github.com/simodimarco/quizzer/quizzer.html
----
-
-
 </textarea>
                 <button class="btn btn-outline" style="width:100%" onclick="copyText('ai-prompt-text')">Copia
                     Prompt AI</button>
